@@ -75,7 +75,7 @@ capture.release()
 estimates_set = []
 for i in range(AREAS):
     frames = np.array(frame_set[i])
-    prediction_classes = model.predict_classes(frames)
+    prediction_classes = (model.predict(frames)).astype("int32")
     estimates = np.array([x[0] for x in prediction_classes])
     estimates_set.append(estimates)
 

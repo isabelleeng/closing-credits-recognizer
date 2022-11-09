@@ -1,1 +1,5 @@
 /env
+videos/
+
+notebooks/models/closing_credits_Resnet50.h5
+notebooks/models/closing_credits_simple_CNN.h5
