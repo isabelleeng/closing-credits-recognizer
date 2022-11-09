@@ -4,23 +4,26 @@ import math
 import numpy as np
 import logging
 import tensorflow as tf
-from keras import models
+from tensorflow.keras.models import load_model
 
-tf.logging.set_verbosity(tf.logging.ERROR)
+tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 logging.basicConfig(level=logging.INFO, format='%(name)s:%(levelname)s: %(message)s')
 LOGGER = logging.getLogger("ClosingCredits")
 STARTING_POINT = 0.8
 ACCEPTANCE_THRESHOLD = 0.9
 AREAS = 3
 
-if len(sys.argv) < 2:
-    LOGGER.error("Missing arguments! You should provide to arguments to the script. First, path to the video and then path to the model.")
-    exit()
+# if len(sys.argv) < 2:
+#     LOGGER.error("Missing arguments! You should provide to arguments to the script. First, path to the video and then path to the model.")
+#     exit()
 
-video_path = sys.argv[1]
-model_path = sys.argv[2]
+# video_path = sys.argv[1]
+# model_path = sys.argv[2]
 
-model = models.load_model(model_path) # loading the pretrained model
+video_path = 'data/videos/The_Tunnel-S01E02.mp4'
+model_path = 'notebooks/models/closing_credits_Resnet50.h5'
+
+model = load_model(model_path) # loading the pretrained model
 metadata = [] # Contains the timestamp (in milliseconds) and frame ID of all frames fed into the model
 
 capture = cv2.VideoCapture(video_path)
@@ -32,24 +35,24 @@ frame_rate = capture.get(5)
 total_frames = capture.get(7)
 
 
-LOGGER.info(f"Movie metadata - width: {width}, height: {height}, framerate: {frame_rate}, "
+LOGGER.info(f"\nMovie metadata - width: {width}, height: {height}, framerate: {frame_rate}, "
             f"total_frames: {total_frames}, currentframe: {capture.get(1)}")
 
-def get_starting_index(estimates, window_size=50):
+def get_starting_index(estimates, window_size=100):
     window = np.zeros((window_size,))
     count = 0
     for i in range(estimates.shape[0]-window_size):
         if count == 10:
             return index
-        ratio_in_window = np.sum(estimates[i:(i+window_size)] == window)/window_size
-        if ratio_in_window > ACCEPTANCE_THRESHOLD:
+        if np.sum(estimates[i:(i+window_size)] == window)/window_size > ACCEPTANCE_THRESHOLD:
             if count == 0:
                 index = i
             count += 1
         else:
             count = 0
             index = None
-    return estimates.shape[0]-1
+    return None
+    
 
 frame_set = []
 for i in range(AREAS):
@@ -72,12 +75,12 @@ for i in range(AREAS):
 LOGGER.info("finished preprocessing frames.")
 capture.release()
 
-estimates_set = []
+# estimates_set = []
 for i in range(AREAS):
     frames = np.array(frame_set[i])
     prediction_classes = (model.predict(frames)).astype("int32")
     estimates = np.array([x[0] for x in prediction_classes])
-    estimates_set.append(estimates)
+    # estimates_set.append(estimates)
 
 LOGGER.info("prediction stage is done.")
 
@@ -87,7 +90,8 @@ def zero_pad(variable):
     else:
         return str(int(variable))
 
-credits_info = metadata[min([get_starting_index(estimates) for estimates in estimates_set])]
+
+credits_info = metadata[get_starting_index(estimates)]
 hour = credits_info['time_progress']//3600000
 minute = (credits_info['time_progress'] - hour * 3600000)//60000
 second = (credits_info['time_progress'] - hour * 3600000 - minute * 60000)//1000
