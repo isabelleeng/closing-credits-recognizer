@@ -29,7 +29,7 @@ while True:
     else:
         print('Not valid path. Try again.')
 
-model_path = 'notebooks/closing_credits_Resnet50.h5'
+model_path = 'models/closing_credits_Resnet50.h5'
 
 model = models.load_model(model_path) # loading the pretrained model
 metadata = [] # Contains the timestamp (in milliseconds) and frame ID of all frames fed into the model
