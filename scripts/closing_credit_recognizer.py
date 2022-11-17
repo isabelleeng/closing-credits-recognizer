@@ -1,4 +1,5 @@
 import sys
+import os
 import cv2
 import math
 import numpy as np
@@ -6,19 +7,29 @@ import logging
 import tensorflow as tf
 from keras import models
 
-tf.logging.set_verbosity(tf.logging.ERROR)
+# tf.logging.set_verbosity(tf.logging.ERROR)
 logging.basicConfig(level=logging.INFO, format='%(name)s:%(levelname)s: %(message)s')
 LOGGER = logging.getLogger("ClosingCredits")
 STARTING_POINT = 0.8
 ACCEPTANCE_THRESHOLD = 0.9
 AREAS = 3
 
-if len(sys.argv) < 2:
-    LOGGER.error("Missing arguments! You should provide to arguments to the script. First, path to the video and then path to the model.")
-    exit()
+# if len(sys.argv) < 2:
+#     LOGGER.error("Missing arguments! You should provide to arguments to the script. First, path to the video and then path to the model.")
+#     exit()
 
-video_path = sys.argv[1]
-model_path = sys.argv[2]
+# video_path = sys.argv[1]
+# model_path = sys.argv[2]
+
+while True:
+    video_path = input("Insert video path: ")
+    validPath = os.path.exists(video_path)
+    if validPath == True:
+        break
+    else:
+        print('Not valid path. Try again.')
+
+model_path = 'notebooks/closing_credits_Resnet50.h5'
 
 model = models.load_model(model_path) # loading the pretrained model
 metadata = [] # Contains the timestamp (in milliseconds) and frame ID of all frames fed into the model
@@ -33,7 +44,7 @@ total_frames = capture.get(7)
 
 
 LOGGER.info(f"Movie metadata - width: {width}, height: {height}, framerate: {frame_rate}, "
-            f"total_frames: {total_frames}, currentframe: {capture.get(1)}")
+            f"total_frames: {total_frames}, currentframe: {capture.get(1)}\nPreprocessing frames...")
 
 def get_starting_index(estimates, window_size=50):
     window = np.zeros((window_size,))
@@ -75,7 +86,7 @@ capture.release()
 estimates_set = []
 for i in range(AREAS):
     frames = np.array(frame_set[i])
-    prediction_classes = model.predict_classes(frames)
+    prediction_classes = (model.predict(frames) > 0.5).astype("int32")
     estimates = np.array([x[0] for x in prediction_classes])
     estimates_set.append(estimates)
 
@@ -94,4 +105,4 @@ second = (credits_info['time_progress'] - hour * 3600000 - minute * 60000)//1000
 hour, minute, second = zero_pad(hour), zero_pad(minute), zero_pad(second)
 ms = int(math.floor(credits_info['time_progress']) % 1000)
 
-LOGGER.info(f"Credits started rolling at {hour}:{minute}:{second}.{ms}, at {credits_info['frame_id']} frame.")
+LOGGER.info(f"Credits started rolling at {hour}:{minute}:{second}.{ms}, at {int(credits_info['frame_id'])} frame.")
