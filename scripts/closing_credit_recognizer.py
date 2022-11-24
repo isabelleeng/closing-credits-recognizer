@@ -27,7 +27,7 @@ while True:
     if validPath == True:
         break
     else:
-        print('Not valid path. Try again.')
+        print('Not a valid path. Try again.')
 
 model_path = 'models/closing_credits_Resnet50.h5'
 
