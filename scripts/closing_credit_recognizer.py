@@ -23,8 +23,11 @@ AREAS = 3
 
 while True:
     video_path = input("Insert video path: ")
+    if '"' in video_path:
+            video_path = video_path.translate({ord('"'): None})
     validPath = os.path.exists(video_path)
-    if validPath == True:
+    file_extension = video_path.split('.')[-1]
+    if validPath == True and file_extension == "mp4":
         break
     else:
         print('Not a valid path. Try again.')
@@ -44,7 +47,7 @@ total_frames = capture.get(7)
 
 
 LOGGER.info(f"Movie metadata - width: {width}, height: {height}, framerate: {frame_rate}, "
-            f"total_frames: {total_frames}, currentframe: {capture.get(1)}\nPreprocessing frames...")
+            f"total_frames: {total_frames}\nPreprocessing frames...")
 
 def get_starting_index(estimates, window_size=50):
     window = np.zeros((window_size,))
